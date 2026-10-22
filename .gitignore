@@ -1,0 +1,21 @@
+
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local editor settings
+.vscode/
+
+# Local data and logs
+*.log
+.streamlit/secrets.toml

@@ -1,0 +1,42 @@
+
+streamlit
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
+langchain
+langchain-core
+langchain-community
+langchain-ollama
+langchain-chroma
+langchain-text-splitters
+langchain-mcp-adapters
+deepagents
+langsmith
+wikipedia
+langchain-openai
+
+
+
+# langchain_openai
+# langchain_core
+# python-dotenv
+# streamlit
+# langchain_community
+# langchain-ollama
+# langchain-chroma
+# langchain-text-splitters
+# langchain-mcp-adapters
+# deepagents
+# langsmith
+# wikipedia
+
+# streamlit
+# python-dotenv
+# langchain-core
+# langchain-community
+# langchain-ollama
+# langchain-mcp-adapters
+# deepagents
+# langsmith
+# wikipedia
