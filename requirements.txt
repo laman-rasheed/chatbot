@@ -15,7 +15,7 @@ deepagents
 langsmith
 wikipedia
 langchain-openai
-
+requests
 
 
 # langchain_openai

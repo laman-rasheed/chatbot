@@ -1,3 +1,4 @@
+import requests
 import asyncio
 import os
 from pathlib import Path
@@ -476,11 +477,20 @@ if user_input:
                 # RUN AGENT
                 # -----------------------------------------
 
-                response = run_deep_agent(
-
-                    st.session_state.messages
-
+                api_url = os.getenv(
+                    "BACKEND_API_URL",
+                    "http://127.0.0.1:8000"
                 )
+
+                api_response = requests.post(
+                    f"{api_url}/chat",
+                    json={"messages": st.session_state.messages},
+                    timeout=180
+                )
+
+                api_response.raise_for_status()
+
+                response = api_response.json()["reply"]
 
                 # -----------------------------------------
                 # DISPLAY RESPONSE
