@@ -1,4 +1,4 @@
-
+import secrets
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -6,7 +6,7 @@ from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -35,6 +35,12 @@ OLLAMA_BASE_URL = os.getenv(
     "http://127.0.0.1:11434",
 )
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+CHAT_API_TOKEN = os.getenv("CHAT_API_TOKEN")
+
+if not CHAT_API_TOKEN:
+    raise RuntimeError(
+        "CHAT_API_TOKEN is missing. Add it to your .env file."
+    )
 
 FRONTEND_ORIGIN = os.getenv(
     "FRONTEND_ORIGIN",
@@ -80,6 +86,12 @@ def search_wikipedia(query: str) -> str:
 async def build_deep_agent():
     client = MultiServerMCPClient(MCP_SERVERS)
     tools = await client.get_tools()
+    print("MCP tools:", [t.name for t in tools])
+
+    print(
+        "get_symbol available:",
+        any(t.name == "get_symbol" for t in tools)
+    )
 
     # Preserve the custom get_symbol validation from your app.
     symbol_tool = next(
@@ -189,7 +201,7 @@ app.add_middleware(
     allow_origins=[FRONTEND_ORIGIN],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Token"],
 )
 
 
@@ -271,27 +283,40 @@ async def run_agent(messages):
 # ---------------------------------------------------------
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    api_token: str | None = Header(default=None, alias="X-API-Token"),
+):
+    if not api_token or not secrets.compare_digest(
+        api_token, CHAT_API_TOKEN
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API token.",
+        )
+
     if agent is None:
         raise HTTPException(
             status_code=503,
-            detail="Deep Agent is not ready. Check the backend terminal.",
+            detail=(
+                "The agent is not ready. "
+                f"{agent_error or 'Try again in a moment.'}"
+            ),
         )
 
-    messages = []
-
-    for item in request.messages[-20:]:
-        if item.role == "user":
-            messages.append(HumanMessage(content=item.content))
-        else:
-            messages.append(AIMessage(content=item.content))
+    messages = [
+        HumanMessage(content=message.content)
+        if message.role == "user"
+        else AIMessage(content=message.content)
+        for message in request.messages[-20:]
+    ]
 
     try:
-        answer = await run_agent(messages)
-        return {"reply": answer}
+        reply = await run_agent(messages)
     except Exception as exc:
-        print(f"Chat request failed: {exc}")
         raise HTTPException(
             status_code=500,
-            detail="The agent could not complete this request. Check the backend terminal.",
-        )
+            detail="The agent could not complete the request.",
+        ) from exc
+
+    return {"reply": reply}

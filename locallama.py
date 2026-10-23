@@ -1,3 +1,4 @@
+import traceback
 import requests
 import asyncio
 import os
@@ -218,6 +219,12 @@ async def build_deep_agent():
     # -----------------------------------------------------
 
     tools = await client.get_tools()
+    print("MCP tools:", [t.name for t in tools])
+
+    print(
+        "get_symbol available:",
+        any(t.name == "get_symbol" for t in tools)
+    )
 
     symbol_tool = next(
         (mcp_tool for mcp_tool in tools if mcp_tool.name == "get_symbol"),
@@ -232,39 +239,63 @@ async def build_deep_agent():
             symbol: str,
             language: str = "python",
         ) -> str:
-            """Look up an API symbol when both its package and symbol are known."""
+            """Look up an API symbol when its package and symbol are known."""
 
             if not package.strip() or not symbol.strip():
                 return (
-                    "A package and symbol are both required for this lookup. "
-                    "Use search_api to identify them first, or answer without "
-                    "a symbol lookup if the request does not depend on a "
-                    "specific LangChain API."
+                    "Both package and symbol are required. "
+                    "Use search_api to identify them first."
                 )
 
-            result = await symbol_tool.ainvoke(
-                {
-                    "package": package,
-                    "symbol": symbol,
-                    "language": language,
-                }
-            )
+            result = await symbol_tool.ainvoke({
+                "package": package,
+                "symbol": symbol,
+                "language": language,
+            })
+
+            # Handle unexpected MCP responses safely
+            if result is None:
+                return (
+                    "The MCP symbol lookup returned no result. "
+                    "Try searching the official documentation first."
+                )
 
             if isinstance(result, str):
                 return result
 
-            return "\n".join(
-                block["text"]
-                for block in result
-                if isinstance(block, dict)
-                and block.get("type") == "text"
-                and isinstance(block.get("text"), str)
-            )
+            if isinstance(result, dict):
+                text_value = result.get("text")
+                if isinstance(text_value, str):
+                    return text_value
+
+                return str(result)
+
+            if isinstance(result, list):
+                text_blocks = []
+
+                for block in result:
+                    if isinstance(block, dict):
+                        if (
+                            block.get("type") == "text"
+                            and isinstance(block.get("text"), str)
+                        ):
+                            text_blocks.append(block["text"])
+
+                    else:
+                        block_text = getattr(block, "text", None)
+
+                        if isinstance(block_text, str):
+                            text_blocks.append(block_text)
+
+                return "\n".join(text_blocks) or str(result)
+
+            return str(result)
 
         tools = [
             get_symbol if mcp_tool.name == "get_symbol" else mcp_tool
             for mcp_tool in tools
         ]
+
 
     tools.append(search_wikipedia)
 
@@ -343,73 +374,52 @@ If you don't know something, say so clearly.
     project_name="my first app",
 )
 def run_deep_agent(messages):
-
-    """
-    This function creates a LangSmith root trace
-    around the complete Deep Agent execution.
-    """
+    """Trace the complete Deep Agent execution."""
 
     async def _run_agent():
-
-        # ---------------------------------------------
-        # BUILD AGENT
-        # ---------------------------------------------
-
+        # Build the agent
         agent = await build_deep_agent()
 
-        # ---------------------------------------------
-        # RUN AGENT
-        # ---------------------------------------------
+        if agent is None:
+            raise RuntimeError(
+                "build_deep_agent() returned None."
+            )
 
-        result = await agent.ainvoke(
+        # Run the agent
+        result = await agent.ainvoke({
+            "messages": messages
+        })
 
-            {
-                "messages": messages
-            }
+        print("Agent result:", repr(result))
 
-        )
+        if result is None:
+            raise RuntimeError(
+                "The Deep Agent returned None."
+            )
 
-        # ---------------------------------------------
-        # GET FINAL RESPONSE
-        # ---------------------------------------------
+        if not isinstance(result, dict):
+            raise TypeError(
+                f"Unexpected agent result: {type(result).__name__}"
+            )
 
-        result_messages = result.get(
-            "messages",
-            []
-        )
+        response_messages = result.get("messages", [])
 
-        if not result_messages:
+        if not response_messages:
+            raise RuntimeError(
+                "The agent returned no messages."
+            )
 
-            return "The agent returned no response."
+        last_message = response_messages[-1]
+        content = getattr(last_message, "content", None)
 
-        final_message = result_messages[-1]
+        if content is None:
+            raise RuntimeError(
+                f"Agent message has no content: {last_message!r}"
+            )
 
-        # ---------------------------------------------
-        # HANDLE DIFFERENT MESSAGE CONTENT TYPES
-        # ---------------------------------------------
+        return content
 
-        content = getattr(
-            final_message,
-            "content",
-            ""
-        )
-
-        if isinstance(
-            content,
-            str
-        ):
-
-            return content
-
-        return str(content)
-
-    # -------------------------------------------------
-    # RUN ASYNC AGENT
-    # -------------------------------------------------
-
-    return asyncio.run(
-        _run_agent()
-    )
+    return asyncio.run(_run_agent())
 
 
 # =========================================================
@@ -429,7 +439,8 @@ if st.button("🧪 Test Live LangSmith Trace"):
             )
             st.success(result.content)
         except Exception as e:
-            st.error(f"LangSmith trace test failed: {e}")
+            st.error(f"Error while running the Deep Agent: {e}")
+            traceback.print_exc()
 
 
 # =========================================================
@@ -476,22 +487,27 @@ if user_input:
                 # -----------------------------------------
                 # RUN AGENT
                 # -----------------------------------------
-
                 api_url = os.getenv(
                     "BACKEND_API_URL",
                     "http://127.0.0.1:8000"
                 )
 
+                api_token = os.getenv("CHAT_API_TOKEN", "")
+
+                if not api_token:
+                    try:
+                        api_token = st.secrets["CHAT_API_TOKEN"]
+                    except Exception:
+                        api_token = ""
                 api_response = requests.post(
-                    f"{api_url}/chat",
+                    f"{api_url.rstrip('/')}/chat",
                     json={"messages": st.session_state.messages},
-                    timeout=180
+                    headers={"X-API-Token": api_token},
+                    timeout=180,
                 )
 
                 api_response.raise_for_status()
-
                 response = api_response.json()["reply"]
-
                 # -----------------------------------------
                 # DISPLAY RESPONSE
                 # -----------------------------------------

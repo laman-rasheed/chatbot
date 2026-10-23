@@ -1,4 +1,4 @@
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -7,11 +7,13 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-os.environ["Langchain_TRACING_V2"] = "true"
-os.environ["Langchain_API_KEY"] = os.getenv("langchain_api_key")
-if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "YOUR_NEW_API_KEY":
-    st.error("Set a valid OPENAI_API_KEY in your .env file before using the app.")
-    st.stop()
+os.environ["LANGSMITH_TRACING"] = "true"
+langsmith_api_key = os.getenv("LANGSMITH_API_KEY")
+
+if langsmith_api_key:
+    os.environ["LANGSMITH_API_KEY"] = langsmith_api_key
+else:
+    print("LANGSMITH_API_KEY is not set; tracing will be unavailable.")
 
 ##prompt template 
 
@@ -23,11 +25,15 @@ prompt = ChatPromptTemplate.from_messages(
 
 ##streamlit freamework
 
-st.title("LangChain demo with OpenAI")
+st.title("LangChain demo with Ollama")
 input_text=st.text_input("Search the topic you want to know about:")
 
 ## openai llm
-llm=ChatOpenAI(model_name="gpt-3.5-turbo")
+
+llm = ChatOllama(
+    model="llama3.2",
+    temperature=0
+)
 output_parser=StrOutputParser()
 chain=prompt | llm | output_parser
 
