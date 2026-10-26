@@ -1,0 +1,45 @@
+:root {
+  color: #e5e7eb;
+  background: #111827;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; }
+
+button, textarea { font: inherit; }
+
+.app-shell {
+  width: min(900px, calc(100% - 2rem));
+  min-height: 100vh;
+  margin: auto;
+  padding: 3rem 0 2rem;
+}
+
+header { margin-bottom: 2rem; }
+.eyebrow { color: #67e8f9; font-size: .75rem; font-weight: 700; letter-spacing: .14em; margin: 0; }
+h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: .25rem 0; }
+.subtitle, .empty-state, .thinking { color: #9ca3af; }
+
+.chat { display: grid; gap: 1rem; min-height: 340px; }
+.message { border-radius: 1rem; max-width: 80%; padding: 1rem 1.25rem; }
+.message p { white-space: pre-wrap; line-height: 1.55; margin: .5rem 0 0; }
+.message.user { background: #0e7490; justify-self: end; }
+.message.assistant { background: #1f2937; justify-self: start; }
+.thinking { margin: 0; }
+
+.composer { border-top: 1px solid #374151; margin-top: 1.5rem; padding-top: 1.5rem; }
+.composer label { display: block; font-weight: 700; margin-bottom: .5rem; }
+.composer div { display: flex; gap: .75rem; }
+textarea { background: #1f2937; border: 1px solid #4b5563; border-radius: .75rem; color: inherit; flex: 1; padding: .75rem; resize: vertical; }
+button { align-self: end; background: #22d3ee; border: 0; border-radius: .75rem; color: #082f49; cursor: pointer; font-weight: 700; padding: .8rem 1.25rem; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+.error { background: #7f1d1d; border-radius: .75rem; margin: 1rem 0; padding: .75rem 1rem; }
+
+@media (max-width: 600px) {
+  .app-shell { padding-top: 2rem; }
+  .message { max-width: 100%; }
+  .composer div { flex-direction: column; }
+  button { align-self: stretch; }
+}

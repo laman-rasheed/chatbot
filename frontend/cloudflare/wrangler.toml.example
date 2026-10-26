@@ -1,0 +1,14 @@
+name = "ollama-deep-agent-web"
+main = "cloudflare/worker.js"
+compatibility_date = "2026-10-24"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+API_ORIGIN = "https://api.example.com"
+
+[secrets]
+required = ["CHAT_API_TOKEN"]

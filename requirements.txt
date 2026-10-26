@@ -1,21 +1,18 @@
 
-streamlit
+
 fastapi
 uvicorn[standard]
 httpx
 python-dotenv
-langchain
+pydantic
 langchain-core
 langchain-community
 langchain-ollama
-langchain-chroma
-langchain-text-splitters
 langchain-mcp-adapters
 deepagents
 langsmith
 wikipedia
-langchain-openai
-requests
+
 
 
 # langchain_openai

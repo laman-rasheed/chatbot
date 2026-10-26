@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import httpx
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +26,7 @@ from langsmith import traceable
 # ---------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env", override=True)
+load_dotenv(BASE_DIR / ".env", override=False)
 
 os.environ["LANGSMITH_TRACING"] = "true"
 os.environ["LANGSMITH_PROJECT"] = "my first app"
@@ -35,7 +36,7 @@ OLLAMA_BASE_URL = os.getenv(
     "http://127.0.0.1:11434",
 )
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
-CHAT_API_TOKEN = os.getenv("CHAT_API_TOKEN")
+CHAT_API_TOKEN = os.getenv("CHAT_API_TOKEN", "")
 
 if not CHAT_API_TOKEN:
     raise RuntimeError(
@@ -162,6 +163,9 @@ Deep Agents, MCP, LangChain APIs, and Python LangChain code.
 Prefer official documentation when available. Do not invent
 documentation or APIs. Give clear and accurate answers.
 If you are uncertain, say so.
+
+For simple greetings and general questions that do not require tools,
+answer directly. Do not delegate these questions to a subagent.
 """,
     )
 
@@ -173,6 +177,9 @@ If you are uncertain, say so.
 agent = None
 agent_error = None
 
+
+
+from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -188,6 +195,8 @@ async def lifespan(app: FastAPI):
         print(f"Deep Agent initialization failed: {exc}")
 
     yield
+
+    print("Shutting down Ollama Deep Agent API.")
 
 
 app = FastAPI(
@@ -248,33 +257,43 @@ async def health():
 # ---------------------------------------------------------
 
 
+
 @traceable(name="website_deep_agent", project_name="my first app")
 async def run_agent(messages):
     result = await agent.ainvoke({"messages": messages})
 
     result_messages = result.get("messages", [])
 
-    # Search backwards for the final assistant response.
+    # Search backward for the final assistant response.
     for message in reversed(result_messages):
-        if isinstance(message, AIMessage):
-            content = getattr(message, "content", "")
+        if not isinstance(message, AIMessage):
+            continue
 
-            # Return normal text, not a tool-call payload.
-            if isinstance(content, str) and content.strip():
-                return content
+        # Skip messages that are requesting tool calls.
+        tool_calls = getattr(message, "tool_calls", None)
+        if tool_calls:
+            continue
 
-            if isinstance(content, list):
-                text_parts = [
-                    item["text"]
-                    for item in content
-                    if isinstance(item, dict)
-                    and item.get("type") == "text"
-                    and isinstance(item.get("text"), str)
-                ]
-                if text_parts:
-                    return "\n".join(text_parts)
+        content = getattr(message, "content", "")
 
-    return "The agent completed the request but returned no text response."
+        # Return plain text only.
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+
+        # Handle content represented as a list of blocks.
+        if isinstance(content, list):
+            text_parts = [
+                block["text"]
+                for block in content
+                if isinstance(block, dict)
+                and block.get("type") == "text"
+                and isinstance(block.get("text"), str)
+            ]
+            if text_parts:
+                return "\n".join(text_parts).strip()
+
+    return "I couldn't generate a final text response. Please try again."
+
 
 
 
@@ -320,3 +339,11 @@ async def chat(
         ) from exc
 
     return {"reply": reply}
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "api:app",
+        host=os.getenv("API_HOST", "127.0.0.1"),
+        port=int(os.getenv("API_PORT", "8000")),
+    )
