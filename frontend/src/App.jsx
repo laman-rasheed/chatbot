@@ -62,7 +62,7 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <p className="eyebrow">LOCAL AI</p>
-        <h1>Ollama Deep Agent made by Laman Rasheed</h1>
+        <h1>Ollama Deep Agent Made by Laman Rasheed</h1>
         <p className="subtitle">
           Llama 3.2 · Deep Agents · MCP · LangSmith
         </p>
@@ -126,11 +126,20 @@ export default function App() {
             id="prompt"
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             placeholder="Ask a question…"
             disabled={isSending}
             rows="3"
           />
-          <button type="submit" disabled={isSending || !prompt.trim()}>
+          <button 
+          type="submit" 
+          disabled={isSending || !prompt.trim()}
+          >
             Send
           </button>
         </div>
