@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
@@ -30,6 +31,7 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       });
+
       const body = await response.json().catch(() => null);
 
       if (!response.ok) throw new Error(toErrorMessage(response, body));
@@ -42,37 +44,82 @@ export default function App() {
         { role: "assistant", content: body.reply },
       ]);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to contact the agent.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to contact the agent."
+      );
     } finally {
       setIsSending(false);
     }
   }
 
+  function printConversation() {
+    window.print();
+  }
+
   return (
     <main className="app-shell">
-      <header>
+      <header className="app-header">
         <p className="eyebrow">LOCAL AI</p>
-        <h1>Ollama Deep Agent</h1>
-        <p className="subtitle">Llama 3.2 · Deep Agents · MCP · LangSmith</p>
+        <h1>Ollama Deep Agent made by Laman Rasheed</h1>
+        <p className="subtitle">
+          Llama 3.2 · Deep Agents · MCP · LangSmith
+        </p>
+
+        {messages.length > 0 && (
+          <div className="chat-actions no-print">
+            <button
+              type="button"
+              className="print-button"
+              onClick={printConversation}
+              disabled={isSending}
+            >
+              Print / Save as PDF
+            </button>
+          </div>
+        )}
       </header>
 
       <section className="chat" aria-label="Conversation">
         {messages.length === 0 ? (
-          <p className="empty-state">Ask about LangChain, Python, or any general topic.</p>
+          <p className="empty-state no-print">
+            Ask about LangChain, Python, or any general topic.
+          </p>
         ) : (
-          messages.map((message, index) => (
-            <article className={`message ${message.role}`} key={`${message.role}-${index}`}>
-              <strong>{message.role === "user" ? "You" : "Agent"}</strong>
-              <p>{message.content}</p>
-            </article>
-          ))
+          <>
+            <div className="print-heading print-only">
+              <h2>Chat Conversation</h2>
+              <p>Ollama Deep Agent · Laman Rasheed</p>
+              <hr />
+            </div>
+
+            {messages.map((message, index) => (
+              <article
+                className={`message ${message.role}`}
+                key={`${message.role}-${index}`}
+              >
+                <strong>{message.role === "user" ? "You" : "Agent"}</strong>
+                <p>{message.content}</p>
+              </article>
+            ))}
+          </>
         )}
-        {isSending && <p className="thinking" role="status">Agent is thinking…</p>}
+
+        {isSending && (
+          <p className="thinking no-print" role="status">
+            Agent is thinking…
+          </p>
+        )}
       </section>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && (
+        <p className="error no-print" role="alert">
+          {error}
+        </p>
+      )}
 
-      <form className="composer" onSubmit={sendMessage}>
+      <form className="composer no-print" onSubmit={sendMessage}>
         <label htmlFor="prompt">Ask your Deep Agent</label>
         <div>
           <textarea

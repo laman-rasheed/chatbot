@@ -43,3 +43,154 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .composer div { flex-direction: column; }
   button { align-self: stretch; }
 }
+
+
+/* Print / Save as PDF controls */
+.chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.print-button {
+  cursor: pointer;
+}
+
+.print-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.print-only {
+  display: none;
+}
+
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+  }
+
+  .no-print,
+  .composer,
+  .chat-actions,
+  .error,
+  .thinking {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .app-header {
+    display: block !important;
+    height: auto !important;
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+  }
+
+  .app-header h1 {
+    font-size: 18pt !important;
+    color: black !important;
+  }
+
+  .eyebrow,
+  .subtitle {
+    color: #333 !important;
+  }
+
+  .chat {
+    display: block !important;
+    position: static !important;
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: white !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .message {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 12px !important;
+    padding: 10px !important;
+    overflow: visible !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    background: white !important;
+    color: black !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .message strong,
+  .message p {
+    display: block !important;
+    color: black !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere !important;
+    white-space: pre-wrap !important;
+  }
+
+  .message p {
+    margin-bottom: 0 !important;
+  }
+
+  .print-heading {
+    display: block !important;
+    margin-bottom: 16px !important;
+  }
+
+  button,
+  textarea,
+  input,
+  label {
+    display: none !important;
+  }
+}
