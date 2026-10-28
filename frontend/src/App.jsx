@@ -62,7 +62,7 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <p className="eyebrow">LOCAL AI Made by Laman Rasheed</p>
-        <h2>Ollama Deep Agent</h2>
+        <h1>Ollama Deep Agent</h1>
         <p className="subtitle">
           Llama 3.2 · Deep Agents · MCP · LangSmith
         </p>
