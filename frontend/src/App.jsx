@@ -89,7 +89,7 @@ export default function App() {
         ) : (
           <>
             <div className="print-heading print-only">
-              <h2>Chat Conversation</h2>
+              <h3>Chat Conversation</h3>
               <p>Ollama Deep Agent · Laman Rasheed</p>
               <hr />
             </div>
